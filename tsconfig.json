@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "esnext",
+    "module": "commonjs",
+    "lib": [
+      "esnext",
+      "esnext.asynciterable"
+    ],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "pretty": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "bins"
+  ]
+}
