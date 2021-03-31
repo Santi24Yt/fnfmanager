@@ -11,6 +11,8 @@
 
 *This only replaces the game assets with other assets*
 
+Download [release](https://github.com/Santi24Yt/fnfmanager/releases)
+
 ## To compile
 You will need a typescript transpiler and [pkg](https://www.npmjs.com/package/pkg)
 
