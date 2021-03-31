@@ -15,6 +15,6 @@
 You will need a typescript transpiler and [pkg](https://www.npmjs.com/package/pkg)
 
 Just run  
-`npm build`  
+`npm run build`  
 and  
-`npm bin`
+`npm run bin`

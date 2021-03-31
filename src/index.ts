@@ -5,7 +5,7 @@ import chalk from "chalk"
 import { Mod, File, ModData, Directory } from "./mod"
 import { copySync, ensureDirSync, removeSync } from "fs-extra"
 
-__dirname = "C:\\Users\\Toshiba\\Documents\\FunkinMulti"
+__dirname = process.cwd()
 
 ensureDirSync(path.join(__dirname, "/mods/fnfmanager"))
 
@@ -269,6 +269,9 @@ function promptUser () : void
       break;
       case Commands.Default:
         restoreDefault()
+      break;
+      case Commands.Quit:
+        process.exit()
       break;
     }
   })

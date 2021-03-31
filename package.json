@@ -4,11 +4,15 @@
   "description": "Friday Night Funkin' assets manager",
   "main": "index.ts",
   "scripts": {
-    "build&run": "tsc && node dist/index.js",
+    "buildnrun": "tsc && node dist/index.js",
     "build": "npm install && tsc",
-    "bin": ""
+    "bin": "pkg dist/index.js --target host --output bins/fnfmanager.exe"
   },
-  "keywords": ["Friday Night Funkin'","Assets","Manager"],
+  "keywords": [
+    "Friday Night Funkin'",
+    "Assets",
+    "Manager"
+  ],
   "author": "Santi_24#3955",
   "license": "Apache-2.0",
   "devDependencies": {
