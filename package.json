@@ -5,6 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "build&run": "tsc && node dist/index.js",
+    "build": "npm install && tsc",
     "bin": ""
   },
   "keywords": ["Friday Night Funkin'","Assets","Manager"],
@@ -21,5 +22,13 @@
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
     "inquirer": "^8.0.0"
+  },
+  "homepage": "https://github.com/Santi24Yt/fnfmanager#readme",
+  "bugs": {
+    "url": "https://github.com/Santi24Yt/fnfmanager/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Santi24Yt/fnfmanager.git"
   }
 }
