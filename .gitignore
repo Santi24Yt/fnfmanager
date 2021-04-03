@@ -41,3 +41,6 @@ bins
 # lock file
 yarn.lock
 package-lock.json
+
+# result
+result.xml

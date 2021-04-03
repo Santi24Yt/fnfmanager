@@ -1,15 +1,10 @@
-# Friday Night Funkin' Assets Manager
+# Friday Night Funkin' xml tools
 
 ## For [Friday Night Funkin' Multiplayer](https://shadowmario.itch.io/funkinmulti)
 
-## Manage your assets
+## Manage your xml asset files
 
-> Structure a mod should have to work (for now)  
->> mod-folder  
->>> assets  
->>>> *same assets structure from [FnFMulti](https://shadowmario.itch.io/funkinmulti)* 
-
-*This only replaces the game assets with other assets*
+Modify xml files properties by groups or individaully
 
 Download [release](https://github.com/Santi24Yt/fnfmanager/releases)
 
