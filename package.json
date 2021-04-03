@@ -1,17 +1,17 @@
 {
-  "name": "fnfassetsmmmanager",
+  "name": "fnfxmltools",
   "version": "1.0.0",
-  "description": "Friday Night Funkin' assets manager",
+  "description": "Friday Night Funkin' xmltools",
   "main": "index.ts",
   "scripts": {
     "buildnrun": "tsc && node dist/index.js",
     "build": "npm install && tsc",
-    "bin": "pkg dist/index.js --target host --output bins/fnfmanager.exe"
+    "bin": "pkg dist/index.js --target host --output bins/fnfxmlt.exe"
   },
   "keywords": [
     "Friday Night Funkin'",
-    "Assets",
-    "Manager"
+    "xml",
+    "tools"
   ],
   "author": "Santi_24#3955",
   "license": "Apache-2.0",
@@ -25,7 +25,8 @@
   "dependencies": {
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
-    "inquirer": "^8.0.0"
+    "inquirer": "^8.0.0",
+    "xml-js": "^1.6.11"
   },
   "homepage": "https://github.com/Santi24Yt/fnfmanager#readme",
   "bugs": {

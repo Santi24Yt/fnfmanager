@@ -4,271 +4,121 @@ import * as path from "path"
 import chalk from "chalk"
 import { Mod, File, ModData, Directory } from "./mod"
 import { copySync, ensureDirSync, removeSync } from "fs-extra"
+import xmljs from "xml-js"
 
-__dirname = process.cwd()
 
-ensureDirSync(path.join(__dirname, "/mods/fnfmanager"))
-
-let allmods: Array<Mod> = []
-
-function getModData(dir: string) : ModData
+async function promptMerge() : Promise<void>
 {
-  let directories: Array<Directory> = []
-  let files: Array<File> = []
-  let dirs = readdirSync(dir)
-  let d : string
-  for(d of dirs)
-  {
-    let stats : Stats = lstatSync(path.join(dir,d))
-    if(stats.isDirectory())
-    {
-      directories.push({name: d, full: path.join(dir,d)})
-      let r : ModData = getModData(path.join(dir,d))
-      r.directories.forEach(d => directories.push({name: d.name, full: d.full}))
-      r.files.filter(f => !files.includes(f)).forEach(f => files.push(f))
-    }else{
-      files.push({name: d, directory: path.join(dir,d)})
-    }
-  }
-  return {files: files, directories: directories}
-}
-
-function readMods(dir: string = "mods/fnfmanager") : void
-{
-  allmods = []
-  let mods: Array<string> = readdirSync(path.join(__dirname, dir))
-  let modn: string
-  if(!mods.includes("default"))
-  {
-    getDefault()
-    mods.push("default")
-  }
-  if(!existsSync(path.join(__dirname,"/mods/fnfmanagerData.json")))
-  {
-    writeFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"),"{}")
-  }
-  let rawData: string = readFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"),"utf-8")
-  let parsedData: any = JSON.parse(rawData)
-  for (modn of mods) 
-  {
-    let stats: Stats = lstatSync(path.join(__dirname, dir, modn))
-    if (stats.isDirectory()) 
-    {
-      let modData: ModData = getModData(path.join(__dirname, dir, modn))
-      let files: Array<File> = modData.files
-      let directories: Array<Directory> = modData.directories
-      let loaded: boolean = parsedData[modn]
-      if(!loaded)  
-      {
-        loaded = false
-      }   
-      allmods.push(new Mod(modn, files, directories, loaded))
-    }
-  }
-  
-}
-
-function getDefault() : void
-{
-  copySync(path.join(__dirname,"assets"),path.join(__dirname, "mods/fnfmanager", "default", "assets"), {overwrite:false})
-}
-
-readMods()
-
-function displayModList() : void
-{
-  console.log(chalk.gray("- "+allmods.length+" mod(s) detected"))
-  allmods.forEach(m => m.printDetails())
-}
-
-function promptAdd() : void
-{
-  console.clear()
-  inquirer.prompt({
+  let merge1 = await inquirer.prompt({
     type: "input",
-    name: "add",
-    message: "Add the directory of the mod to add"
-  }).then(ans =>{
-    if(ans["add"] != "")
-    {
-      let dir: string = ans["add"]
-      let name: string = dir.split("\\").pop() || "nomodname"
-      if(existsSync(dir))
+    name: "merge1",
+    message: "Add the base xml file dir (ex. C:\\Users\\Me\\Desktop\\DADDY_DEAREST.xml)"
+  })
+  let merge2 = await inquirer.prompt({
+    type: "input",
+    name: "merge2",
+    message: "Add the xml file you want to port dir (ex. C:\\Users\\Me\\Desktop\\HEX.xml)"
+  })
+  try
+  {
+    let xml1 = readFileSync(merge1["merge1"], "utf-8")
+    let xml2 = readFileSync(merge2["merge2"], "utf-8")
+    let res1 = JSON.parse(xmljs.xml2json(xml1,{compact: false})).elements[0].elements.filter((e: { name: string }) => e.name == "SubTexture")
+    let res2 = JSON.parse(xmljs.xml2json(xml2,{compact: false})).elements[0].elements.filter((e: { name: string }) => e.name == "SubTexture")
+    let data1 = res1.map((e: { attributes: { name: string } }) => ({...e.attributes, type: getType(e.attributes.name)}))
+    let data2 = res2.map((e: { attributes: { name: string } }) => ({...e.attributes, type: getType(e.attributes.name)}))
+    let final = data2.map((e: { type: any; name: string },i: any) => {
+      let typ = data1.filter((d1: { type: any }) => d1.type == e.type)
+      if(typ.length == 0)
       {
-        copySync(dir, path.join(__dirname, "mods/fnfmanager/", name), {overwrite: true})
-        readMods()
+          typ = data1.filter((d1: { type: string }) => d1.type == "idle")
       }
-    }
+      let d1 = typ.find((d1: { name: string }) => d1.name.endsWith(e.name.slice(-4)))
+      return d1 ? ({...d1, name: e.name}) : null
+    }).filter((e: any) => e)
+    let finxml = JSON.parse(xmljs.xml2json(xml2,{compact: false}))
+    writeFileSync("./result.xml", xmljs.json2xml(JSON.stringify(finxml), {spaces: 4}))
     promptUser()
-  })
-}
-
-function promptDelete() : void
-{
-  console.clear()
-  let choices = allmods.filter(m => m.name != "default").filter(m => !m.loaded).map((m,i) => ({name:m.name, value: i}))
-  inquirer.prompt({
-    type: "checkbox",
-    name: "delete",
-    message: "Select mods to delete them",
-    choices: choices
-  }).then(ans => {
-    let del: Array<number> = ans["delete"] as Array<number>
-    del.forEach(n => {
-      removeSync(path.join(__dirname, "mods/fnfmanager", choices[n].name))
-    })
-    readMods()
-    promptUser()
-  })
-}
-
-function promptLoad() : void
-{
-  console.clear()
-  let choices = allmods.filter(m => m.name != "default").filter(m => !m.loaded).map((m,i) => ({name:m.name, value: i}))
-  choices.push({name:"Back",value:choices.length})
-  inquirer.prompt({
-    type: "list",
-    name: "load",
-    choices: choices
-  }).then(ans => {
-    let load: number = ans["load"]
-    let loadN: string = choices[load].name
-    if(loadN != "Back")
-    {
-      loadMod(loadN)
-    }
-    promptUser()
-  })
-}
-
-function loadMod(name: string)
-{
-  let mod = allmods.find(m => m.name == name)
-  if(!mod) throw new Error("Missing mod")
-  mod.files.forEach(f =>{
-    copySync(f.directory, path.join(__dirname, f.directory.split(name).slice(1).join(name)),{overwrite: true})
-  })
-  mod.loaded = true
-  let rawData: string = readFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"),"utf-8")
-  let parsedData: any = JSON.parse(rawData)
-  parsedData[name] = true
-  writeFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"), JSON.stringify(parsedData))
-}
-
-function promptUnload() : void
-{
-  console.clear()
-  let choices = allmods.filter(m => m.loaded).map((m,i) => ({name:m.name, value: i}))
-  choices.push({name:"Back",value:choices.length})
-  inquirer.prompt({
-    type: "list",
-    name: "unload",
-    choices: choices
-  }).then(ans => {
-    let unload: number = ans["unload"]
-    let unloadN: string = choices[unload].name
-    if(unloadN != "Back")
-    {
-      unloadMod(unloadN)
-    }
-    promptUser()
-  })
-}
-
-function unloadMod(name: string) : void
-{
-  let mod: Mod|undefined = allmods.find(m => m.name == name)
-  let def: Mod|undefined = allmods.find(m => m.name == "default")
-  if(!mod) throw new Error("Missing mod")
-  if(!def)
-  {
-    readMods()
+  }catch(err){
+    console.error(err)
+    setTimeout(() => {
+      promptUser()
+    },1000*60*2)
   }
-  mod.files.forEach(f =>{
-    let defFile = def?.files.find(df => df.name == f.name)
-    if(defFile)
-    {
-      copySync(defFile.directory, path.join(__dirname, f.directory.split(name).slice(1).join(name)),{overwrite: true})
-    }
-  })
-  mod.loaded = false
-  let rawData: string = readFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"),"utf-8")
-  let parsedData: any = JSON.parse(rawData)
-  parsedData[name] = false
-  writeFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"), JSON.stringify(parsedData))
 }
 
-function restoreDefault() : void
+function getType(name: string) :string
 {
-  let def: Mod|undefined = allmods.find(m => m.name == "default")
-  if(!def)
-  {
-    readMods()
-  }
-  def?.files.forEach(f => {
-    copySync(f.directory, path.join(__dirname, f.directory.split("default").slice(1).join("default")),{overwrite: true})
-  })
-  allmods.forEach(m => m.loaded = false)
-  let rawData: string = readFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"),"utf-8")
-  let parsedData: any = JSON.parse(rawData)
-  Object.keys(parsedData).forEach(d => parsedData[d] = false)
-  writeFileSync(path.join(__dirname,"/mods/fnfmanagerData.json"), JSON.stringify(parsedData))
-  promptUser()
+    name = name.toLowerCase()
+    if(name.includes("down"))
+    {
+        if(name.includes("miss"))
+        {
+            return "down miss"
+        }else{
+            return "down"
+        }
+    }
+    if(name.includes("idle"))
+    {
+        if(name.includes("miss"))
+        {
+            return "idle miss"
+        }else{
+            return "idle"
+        }
+    }
+    if(name.includes("left"))
+    {
+        if(name.includes("miss"))
+        {
+            return "left miss"
+        }else{
+            return "left"
+        }
+    }
+    if(name.includes("right"))
+    {
+        if(name.includes("miss"))
+        {
+            return "right miss"
+        }else{
+            return "right"
+        }
+    }
+    if(name.includes("up"))
+    {
+        if(name.includes("miss"))
+        {
+            return "up miss"
+        }else{
+            return "up"
+        }
+    }
+    return "invalid"
 }
 
 enum Commands
 {
-  Add = "Add mod from directory",
-  Load = "Load mod to game",
-  Unload = "Unload mod if loaded",
-  Delete = "Delete mods",
-  Default = "Restore default",
+  Merge = "Merge an xml file to have the properties of the other one",
+  Modify = "Load mod to game",
   Quit = "Quit/Exit"
 }
 
 function promptUser () : void
 {
   console.clear()
-  console.log(chalk.bold.italic.underline("Friday Night Funkin' Multiplayer Mod Manager"))
-  displayModList()
+  console.log(chalk.bold.italic.underline("Friday Night Funkin' xmltools"))
   inquirer.prompt({
     type: "list",
     name: "command",
     message: "Choose an option",
     choices: Object.values(Commands)
-  }).then(ans => {
+  }).then(async ans => {
     switch (ans["command"])
     {
-      case Commands.Add:
-        promptAdd()
-      break;
-      case Commands.Delete:
-        if(allmods.length > 1)
-        {
-          promptDelete()
-        }else{
-          promptUser()
-        }
-      break;
-      case Commands.Load:
-        if(allmods.filter(m => !m.loaded).length > 0)
-        {
-          promptLoad()
-        }else{
-          promptUser()
-        }
-      break;
-      case Commands.Unload:
-        if(allmods.filter(m => m.loaded).length > 0)
-        {
-          promptUnload()
-        }else{
-          promptUser()
-        }
-      break;
-      case Commands.Default:
-        restoreDefault()
+      case Commands.Merge:
+        promptMerge()
       break;
       case Commands.Quit:
         process.exit()
